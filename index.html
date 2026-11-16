@@ -1897,13 +1897,6 @@
                 return;
             }
 
-            const totalResi = periodEntries.reduce((sum, x) => sum + Number(x.jumlah || 0), 0);
-            const totalEntri = periodEntries.length;
-            const avgResi = totalEntri > 0 ? (totalResi / totalEntri).toFixed(1).replace('.', ',') : '0,0';
-            const periodeLabel = start === end
-                ? formatDisplayDate(start)
-                : `${formatDisplayDate(start)} s/d ${formatDisplayDate(end)}`;
-
             const expMap = new Map();
             const packerMap = new Map();
             periodEntries.forEach(item => {
@@ -1913,78 +1906,41 @@
 
             const sortedExp = Array.from(expMap.entries()).sort((a, b) => b[1] - a[1]);
             const sortedPacker = Array.from(packerMap.entries()).sort((a, b) => b[1] - a[1]);
+            const maxRows = Math.max(sortedExp.length, sortedPacker.length);
 
             const esc = (str) => String(str ?? '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
 
-            const expRowsHtml = sortedExp.map(([name, val], idx) => {
-                const pct = totalResi > 0 ? ((val / totalResi) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
-                return `
+            let bodyRowsHtml = '';
+            for (let i = 0; i < maxRows; i++) {
+                const expItem = sortedExp[i];
+                const packerItem = sortedPacker[i];
+                bodyRowsHtml += `
                     <tr>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:center;">${idx + 1}</td>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold;">${esc(name)}</td>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right; font-weight:bold; color:#2970a8;">${val}</td>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right;">${pct}</td>
+                        <td>${expItem ? esc(expItem[0]) : ''}</td>
+                        <td style="text-align:right;">${expItem ? expItem[1] : ''}</td>
+                        <td></td>
+                        <td>${packerItem ? esc(packerItem[0]) : ''}</td>
+                        <td style="text-align:right;">${packerItem ? packerItem[1] : ''}</td>
                     </tr>
                 `;
-            }).join('');
-
-            const packerRowsHtml = sortedPacker.map(([name, val], idx) => {
-                const pct = totalResi > 0 ? ((val / totalResi) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
-                return `
-                    <tr>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:center;">${idx + 1}</td>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold;">${esc(name)}</td>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right; font-weight:bold; color:#c85a32;">${val}</td>
-                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right;">${pct}</td>
-                    </tr>
-                `;
-            }).join('');
+            }
 
             const excelHtml = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
                 <head><meta charset="UTF-8"></head>
-                <body style="font-family: Arial, sans-serif; font-size: 11pt;">
+                <body style="font-family: Calibri, Arial, sans-serif; font-size: 11pt;">
                     <table>
-                        <tr><td colspan="4" style="font-size:14pt; font-weight:bold; color:#0f172a;">LAPORAN LOGISTIK HARIAN</td></tr>
-                        <tr><td colspan="4" style="color:#475569;">Periode Laporan: <b>${esc(periodeLabel)}</b></td></tr>
-                        <tr><td colspan="4"></td></tr>
                         <tr>
-                            <td style="border:1px solid #cbd5e1; padding:6px 10px; background:#f1f5f9; font-weight:bold;">Total Resi</td>
-                            <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold; color:#2970a8;">${totalResi}</td>
-                            <td style="border:1px solid #cbd5e1; padding:6px 10px; background:#f1f5f9; font-weight:bold;">Jumlah Entri</td>
-                            <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold;">${totalEntri} (Rata-rata: ${avgResi})</td>
+                            <th>Expedisi</th>
+                            <th>Jumlah Resi</th>
+                            <th></th>
+                            <th>Packer</th>
+                            <th>Jumlah Resi</th>
                         </tr>
-                        <tr><td colspan="4"></td></tr>
-                        <tr><td colspan="4" style="font-size:12pt; font-weight:bold; color:#2970a8;">RESI PER EXPEDISI</td></tr>
-                        <tr>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff;">No</th>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff; text-align:left;">Nama Expedisi</th>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff; text-align:right;">Jumlah Resi</th>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff; text-align:right;">Persentase</th>
-                        </tr>
-                        ${expRowsHtml}
-                        <tr>
-                            <td colspan="2" style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; font-weight:bold;">TOTAL EXPEDISI</td>
-                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold; color:#2970a8;">${totalResi}</td>
-                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold;">100%</td>
-                        </tr>
-                        <tr><td colspan="4"></td></tr>
-                        <tr><td colspan="4" style="font-size:12pt; font-weight:bold; color:#c85a32;">RESI PER PACKER</td></tr>
-                        <tr>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff;">No</th>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff; text-align:left;">Nama Packer</th>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff; text-align:right;">Jumlah Resi</th>
-                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff; text-align:right;">Persentase</th>
-                        </tr>
-                        ${packerRowsHtml}
-                        <tr>
-                            <td colspan="2" style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; font-weight:bold;">TOTAL PACKER</td>
-                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold; color:#c85a32;">${totalResi}</td>
-                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold;">100%</td>
-                        </tr>
+                        ${bodyRowsHtml}
                     </table>
                 </body>
                 </html>
