@@ -333,11 +333,6 @@
             <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">SINKRONISASI GOOGLE SHEETS (MULTI-USER)</h2>
-                    <button type="button" onclick="openAppsScriptModal()"
-                        class="px-2.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2970a8] text-[11px] font-bold flex items-center gap-1 transition cursor-pointer">
-                        <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
-                        <span>Lihat Code.gs</span>
-                    </button>
                 </div>
 
                 <div class="flex items-center justify-between mb-1.5">
@@ -366,16 +361,13 @@
                     </button>
                 </div>
 
-                <div class="flex items-center gap-2 text-xs font-bold text-slate-800 mb-2">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
                     <span id="cloud-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0"></span>
                     <span id="cloud-status-text">Belum terhubung · data tersimpan lokal di perangkat.</span>
                     <span id="pending-sync-badge" class="hidden ml-auto px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">0 antrean</span>
                 </div>
 
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    <strong>Cara aktifkan multi-user:</strong> buat Google Sheet &rarr; Extensions &rarr; Apps Script &rarr; tempel kode <button type="button" onclick="openAppsScriptModal()" class="font-bold text-[#2970a8] underline cursor-pointer">Code.gs</button> &rarr; Deploy sebagai Web app (akses: <strong>Anyone</strong>) &rarr; salin URL &rarr; tempel di atas. Data tersimpan permanen di perangkat dan terkirim otomatis; data dari pengguna lain muncul otomatis dalam <strong>&lt;1 menit</strong>. Tekan <strong>Sinkronkan Sekarang</strong> untuk paksa sinkron kapan saja. URL tetap tersimpan meski diputus.
-                </p>
-                <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                     <span>Sinkron terakhir: <strong id="last-sync-time" class="text-slate-600">-</strong></span>
                     <span id="cloud-status-badge" class="font-semibold text-slate-500">Mode Lokal</span>
                 </div>
@@ -395,7 +387,7 @@
                         Tambah
                     </button>
                 </form>
-                <div id="master-packer-list" class="divide-y divide-slate-100"></div>
+                <div id="master-packer-list" class="divide-y divide-slate-100 max-h-[186px] overflow-y-auto pr-1"></div>
             </div>
 
             <!-- Kartu Master Nama Expedisi -->
@@ -412,7 +404,7 @@
                         Tambah
                     </button>
                 </form>
-                <div id="master-expedisi-list" class="divide-y divide-slate-100"></div>
+                <div id="master-expedisi-list" class="divide-y divide-slate-100 max-h-[186px] overflow-y-auto pr-1"></div>
             </div>
 
             <p class="text-center text-xs text-slate-400 px-4 pb-2 leading-relaxed">
