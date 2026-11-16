@@ -174,13 +174,13 @@
         <!-- ==================== TAB 2: DATA ==================== -->
         <section id="view-data" class="space-y-4 hidden fade-in">
             <!-- Header Jumlah Catatan & Ekspor CSV -->
-            <div class="bg-white rounded-3xl px-5 py-4 shadow-sm border border-slate-200/60 flex items-center justify-between">
+            <div class="bg-white rounded-3xl px-5 py-4 shadow-sm border border-slate-200/60 flex items-center justify-between gap-2">
                 <div id="data-count-label" class="text-xs font-bold uppercase tracking-wider text-slate-600">
                     CATATAN (0) dari 0
                 </div>
                 <button type="button" onclick="exportDataCSV()"
-                    class="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    class="px-3.5 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0">
+                    <svg class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     <span>CSV</span>
                 </button>
             </div>
@@ -265,11 +265,11 @@
                     </div>
                 </div>
 
-                <!-- Tombol Ekspor Laporan CSV -->
-                <button type="button" onclick="exportLaporanCSV()"
+                <!-- Tombol Ekspor Laporan Excel -->
+                <button type="button" onclick="exportLaporanExcel()"
                     class="w-full sm:w-auto px-4 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-700 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    <span>Ekspor Laporan CSV</span>
+                    <svg class="w-4 h-4 text-[#2970a8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Ekspor Laporan Excel</span>
                 </button>
             </div>
 
@@ -665,88 +665,90 @@
             "  return sheet;",
             "}",
             "",
-            "function upsertRow(sheet, item) {",
-            "  if (!item || !item.id) return;",
-            "  var data = sheet.getDataRange().getValues();",
-            "  var rowValues = [",
-            "    String(item.id),",
-            "    String(item.tanggal || ''),",
-            "    String(item.jam || ''),",
-            "    String(item.packer || ''),",
-            "    String(item.expedisi || ''),",
-            "    Number(item.jumlah || 0),",
-            "    String(item.operator || ''),",
-            "    Number(item.createdAt || Date.now())",
-            "  ];",
-            "  for (var i = 1; i < data.length; i++) {",
-            "    if (String(data[i][0]) === String(item.id)) {",
-            "      sheet.getRange(i + 1, 1, 1, rowValues.length).setValues([rowValues]);",
-            "      return;",
+            "function upsertRow(sheet, data) {",
+            "  if (!data || !data.id) return;",
+            "  var values = sheet.getDataRange().getValues();",
+            "  var rowIndex = -1;",
+            "  for (var i = 1; i < values.length; i++) {",
+            "    if (String(values[i][0]) === String(data.id)) {",
+            "      rowIndex = i + 1;",
+            "      break;",
             "    }",
             "  }",
-            "  sheet.appendRow(rowValues);",
+            "  var rowValues = [",
+            "    String(data.id),",
+            "    \"'\" + String(data.tanggal),",
+            "    \"'\" + String(data.jam),",
+            "    String(data.packer),",
+            "    String(data.expedisi),",
+            "    Number(data.jumlah),",
+            "    String(data.operator || 'Operator'),",
+            "    Number(data.createdAt || Date.now())",
+            "  ];",
+            "  if (rowIndex > 0) {",
+            "    sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);",
+            "  } else {",
+            "    sheet.appendRow(rowValues);",
+            "  }",
             "}",
             "",
             "function deleteRowById(sheet, id) {",
-            "  var data = sheet.getDataRange().getValues();",
-            "  for (var i = data.length - 1; i >= 1; i--) {",
-            "    if (String(data[i][0]) === String(id)) {",
+            "  if (!id) return;",
+            "  var values = sheet.getDataRange().getValues();",
+            "  for (var i = values.length - 1; i >= 1; i--) {",
+            "    if (String(values[i][0]) === String(id)) {",
             "      sheet.deleteRow(i + 1);",
             "    }",
             "  }",
             "}",
             "",
-            "function saveMasterConfig(sheet, packers, expedisis) {",
-            "  var rows = [",
-            "    ['key', 'value'],",
-            "    ['packers', JSON.stringify(packers || [])],",
-            "    ['expedisis', JSON.stringify(expedisis || [])]",
-            "  ];",
-            "  sheet.clearContents();",
-            "  sheet.getRange(1, 1, rows.length, 2).setValues(rows);",
-            "}",
-            "",
             "function readAllEntries(sheet) {",
-            "  var data = sheet.getDataRange().getValues();",
+            "  var values = sheet.getDataRange().getValues();",
+            "  var tz = Session.getScriptTimeZone() || 'Asia/Jakarta';",
             "  var list = [];",
-            "  for (var i = 1; i < data.length; i++) {",
-            "    if (!data[i][0]) continue;",
-            "    var tgl = data[i][1];",
-            "    if (tgl instanceof Date) {",
-            "      tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), 'yyyy-MM-dd');",
-            "    }",
-            "    var jamVal = data[i][2];",
-            "    if (jamVal instanceof Date) {",
-            "      jamVal = Utilities.formatDate(jamVal, Session.getScriptTimeZone(), 'HH:mm');",
-            "    }",
+            "  for (var i = 1; i < values.length; i++) {",
+            "    if (!values[i][0]) continue;",
+            "    var rawTgl = values[i][1];",
+            "    var tglStr = (rawTgl instanceof Date) ? Utilities.formatDate(rawTgl, tz, 'yyyy-MM-dd') : String(rawTgl).replace(/^'/, '');",
+            "    var rawJam = values[i][2];",
+            "    var jamStr = (rawJam instanceof Date) ? Utilities.formatDate(rawJam, tz, 'HH:mm') : String(rawJam).replace(/^'/, '');",
             "    list.push({",
-            "      id: String(data[i][0]),",
-            "      tanggal: String(tgl),",
-            "      jam: String(jamVal || ''),",
-            "      packer: String(data[i][3] || ''),",
-            "      expedisi: String(data[i][4] || ''),",
-            "      jumlah: Number(data[i][5] || 0),",
-            "      operator: String(data[i][6] || ''),",
-            "      createdAt: Number(data[i][7] || 0)",
+            "      id: String(values[i][0]),",
+            "      tanggal: tglStr,",
+            "      jam: jamStr,",
+            "      packer: String(values[i][3]),",
+            "      expedisi: String(values[i][4]),",
+            "      jumlah: Number(values[i][5] || 0),",
+            "      operator: String(values[i][6] || 'Operator'),",
+            "      createdAt: Number(values[i][7] || 0)",
             "    });",
             "  }",
             "  return list;",
             "}",
             "",
+            "function saveMasterConfig(sheet, packers, expedisis) {",
+            "  sheet.clearContents();",
+            "  sheet.appendRow(['key', 'value']);",
+            "  sheet.appendRow(['packers', JSON.stringify(packers || [])]);",
+            "  sheet.appendRow(['expedisis', JSON.stringify(expedisis || [])]);",
+            "}",
+            "",
             "function readMasterConfig(sheet) {",
-            "  var data = sheet.getDataRange().getValues();",
-            "  var res = { packers: null, expedisis: null };",
-            "  for (var i = 1; i < data.length; i++) {",
-            "    if (data[i][0] === 'packers' && data[i][1]) res.packers = JSON.parse(data[i][1]);",
-            "    if (data[i][0] === 'expedisis' && data[i][1]) res.expedisis = JSON.parse(data[i][1]);",
+            "  var values = sheet.getDataRange().getValues();",
+            "  var res = { packers: [], expedisis: [] };",
+            "  for (var i = 1; i < values.length; i++) {",
+            "    if (values[i][0] === 'packers' && values[i][1]) res.packers = JSON.parse(values[i][1]);",
+            "    if (values[i][0] === 'expedisis' && values[i][1]) res.expedisis = JSON.parse(values[i][1]);",
             "  }",
             "  return res;",
             "}"
         ].join("\n");
-        // 2. PENYIMPANAN LOKAL PERMANEN (INDEXEDDB)
+
         // ==========================================
-        const IDB_NAME = 'LogistikHarianGSheetDB_v1';
-        const IDB_STORE = 'app_state';
+        // 2. INDEXEDDB LOCAL STORAGE (ANTI HILANG SAAT REFRESH)
+        // ==========================================
+        const IDB_NAME = 'logistik_harian_gsheet_db';
+        const IDB_STORE = 'kv_store';
         let idbPromise = null;
 
         function openIDB() {
@@ -1887,21 +1889,117 @@
             showToast('Laporan CSV berhasil diunduh', 'success');
         };
 
-        function openConfirmModal(title, desc, onYes) {
-            document.getElementById('confirm-modal-title').textContent = title;
-            document.getElementById('confirm-modal-desc').textContent = desc;
-            confirmCallback = onYes;
-            const modal = document.getElementById('confirm-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
+        window.exportLaporanExcel = function() {
+            const { start, end } = getLaporanRange();
+            const periodEntries = entries.filter(item => item.tanggal >= start && item.tanggal <= end);
+            if (periodEntries.length === 0) {
+                showToast('Tidak ada data laporan pada periode ini', 'error');
+                return;
+            }
 
-        window.closeConfirmModal = function(e) {
-            if (e && e.target !== e.currentTarget) return;
-            const modal = document.getElementById('confirm-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            confirmCallback = null;
+            const totalResi = periodEntries.reduce((sum, x) => sum + Number(x.jumlah || 0), 0);
+            const totalEntri = periodEntries.length;
+            const avgResi = totalEntri > 0 ? (totalResi / totalEntri).toFixed(1).replace('.', ',') : '0,0';
+            const periodeLabel = start === end
+                ? formatDisplayDate(start)
+                : `${formatDisplayDate(start)} s/d ${formatDisplayDate(end)}`;
+
+            const expMap = new Map();
+            const packerMap = new Map();
+            periodEntries.forEach(item => {
+                expMap.set(item.expedisi, (expMap.get(item.expedisi) || 0) + Number(item.jumlah || 0));
+                packerMap.set(item.packer, (packerMap.get(item.packer) || 0) + Number(item.jumlah || 0));
+            });
+
+            const sortedExp = Array.from(expMap.entries()).sort((a, b) => b[1] - a[1]);
+            const sortedPacker = Array.from(packerMap.entries()).sort((a, b) => b[1] - a[1]);
+
+            const esc = (str) => String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            const expRowsHtml = sortedExp.map(([name, val], idx) => {
+                const pct = totalResi > 0 ? ((val / totalResi) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+                return `
+                    <tr>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:center;">${idx + 1}</td>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold;">${esc(name)}</td>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right; font-weight:bold; color:#2970a8;">${val}</td>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right;">${pct}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const packerRowsHtml = sortedPacker.map(([name, val], idx) => {
+                const pct = totalResi > 0 ? ((val / totalResi) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+                return `
+                    <tr>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:center;">${idx + 1}</td>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold;">${esc(name)}</td>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right; font-weight:bold; color:#c85a32;">${val}</td>
+                        <td style="border:1px solid #cbd5e1; padding:6px 10px; text-align:right;">${pct}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const excelHtml = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="UTF-8"></head>
+                <body style="font-family: Arial, sans-serif; font-size: 11pt;">
+                    <table>
+                        <tr><td colspan="4" style="font-size:14pt; font-weight:bold; color:#0f172a;">LAPORAN LOGISTIK HARIAN</td></tr>
+                        <tr><td colspan="4" style="color:#475569;">Periode Laporan: <b>${esc(periodeLabel)}</b></td></tr>
+                        <tr><td colspan="4"></td></tr>
+                        <tr>
+                            <td style="border:1px solid #cbd5e1; padding:6px 10px; background:#f1f5f9; font-weight:bold;">Total Resi</td>
+                            <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold; color:#2970a8;">${totalResi}</td>
+                            <td style="border:1px solid #cbd5e1; padding:6px 10px; background:#f1f5f9; font-weight:bold;">Jumlah Entri</td>
+                            <td style="border:1px solid #cbd5e1; padding:6px 10px; font-weight:bold;">${totalEntri} (Rata-rata: ${avgResi})</td>
+                        </tr>
+                        <tr><td colspan="4"></td></tr>
+                        <tr><td colspan="4" style="font-size:12pt; font-weight:bold; color:#2970a8;">RESI PER EXPEDISI</td></tr>
+                        <tr>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff;">No</th>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff; text-align:left;">Nama Expedisi</th>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff; text-align:right;">Jumlah Resi</th>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#2970a8; color:#ffffff; text-align:right;">Persentase</th>
+                        </tr>
+                        ${expRowsHtml}
+                        <tr>
+                            <td colspan="2" style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; font-weight:bold;">TOTAL EXPEDISI</td>
+                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold; color:#2970a8;">${totalResi}</td>
+                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold;">100%</td>
+                        </tr>
+                        <tr><td colspan="4"></td></tr>
+                        <tr><td colspan="4" style="font-size:12pt; font-weight:bold; color:#c85a32;">RESI PER PACKER</td></tr>
+                        <tr>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff;">No</th>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff; text-align:left;">Nama Packer</th>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff; text-align:right;">Jumlah Resi</th>
+                            <th style="border:1px solid #94a3b8; padding:6px 10px; background:#c85a32; color:#ffffff; text-align:right;">Persentase</th>
+                        </tr>
+                        ${packerRowsHtml}
+                        <tr>
+                            <td colspan="2" style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; font-weight:bold;">TOTAL PACKER</td>
+                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold; color:#c85a32;">${totalResi}</td>
+                            <td style="border:1px solid #94a3b8; padding:6px 10px; background:#f1f5f9; text-align:right; font-weight:bold;">100%</td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob(['\ufeff', excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `laporan-logistik-${start}_sd_${end}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showToast('Laporan Excel berhasil diunduh', 'success');
         };
 
         document.getElementById('confirm-modal-yes').addEventListener('click', async () => {
