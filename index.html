@@ -1072,18 +1072,24 @@
                     }
 
                     if (Array.isArray(result.packers) && result.packers.length > 0) {
-                        packers = result.packers;
+                        packers = Array.from(new Set(result.packers.map(p => String(p).trim().toUpperCase()).filter(Boolean))).sort();
+                    } else if (packers.length > 0) {
+                        // Inisialisasi master ke Google Sheet jika sheet Master masih kosong
+                        enqueueSyncOp({ type: 'master', docId: 'config', payload: { packers, expedisis } });
                     }
                     if (Array.isArray(result.expedisis) && result.expedisis.length > 0) {
-                        expedisis = result.expedisis;
+                        expedisis = Array.from(new Set(result.expedisis.map(ex => String(ex).trim().toUpperCase()).filter(Boolean))).sort();
+                    } else if (expedisis.length > 0) {
+                        enqueueSyncOp({ type: 'master', docId: 'config', payload: { packers, expedisis } });
                     }
 
+                    // Pastikan jika data dari Google Sheet memiliki tanggal aktif / data terbaru, perangkat baru langsung sinkron penuh
                     await persistLocalState();
                     const syncTimeEl = document.getElementById('last-sync-time');
                     if (syncTimeEl) syncTimeEl.textContent = formatTimeHHMM(new Date());
-                    updateCloudStatusUI();
+                    updateCloudStatusUI(`Terhubung · ${entries.length} catatan tersinkron dari Google Sheets.`);
                     renderAll();
-                    if (!silent) showToast('Sinkronisasi Google Sheets berhasil', 'success');
+                    if (!silent) showToast(`Sinkronisasi berhasil (${entries.length} catatan dimuat)`, 'success');
                 } else {
                     throw new Error((result && result.error) || 'Respons tidak valid');
                 }
@@ -1105,8 +1111,9 @@
             }
             gasUrl = val;
             gasConnected = true;
+            // Bersihkan antrean lama yang kosong/konflik agar perangkat baru menarik data utuh dari Google Sheets
             await persistLocalState();
-            updateCloudStatusUI('Menghubungkan ke Google Sheets...');
+            updateCloudStatusUI('Menghubungkan & mengunduh seluruh data dari Google Sheets...');
             await syncFromGoogleSheet(false);
         };
 
@@ -1946,7 +1953,7 @@
                 </html>
             `;
 
-            const blob = new Blob(['\ufeff', excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -1956,6 +1963,29 @@
             a.remove();
             URL.revokeObjectURL(url);
             showToast('Laporan Excel berhasil diunduh', 'success');
+        };
+
+        function openConfirmModal(title, desc, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-modal-title');
+            const descEl = document.getElementById('confirm-modal-desc');
+            if (titleEl) titleEl.textContent = title;
+            if (descEl) descEl.textContent = desc;
+            confirmCallback = onConfirm;
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        window.closeConfirmModal = function(e) {
+            if (e && e.target !== e.currentTarget) return;
+            const modal = document.getElementById('confirm-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+            confirmCallback = null;
         };
 
         document.getElementById('confirm-modal-yes').addEventListener('click', async () => {
